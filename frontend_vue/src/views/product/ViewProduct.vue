@@ -114,7 +114,7 @@ export default {
             product: null,
             errorMessage: null,
             isLoading: true,
-            isZoomed: false, // Track image zoom state
+            isZoomed: false,
         };
     },
     mounted() {
@@ -157,7 +157,7 @@ export default {
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit',
-                hour12: false, // To ensure the time is in 24-hour format
+                hour12: false,
             };
 
             const formattedDate = new Date(date).toLocaleString('en-GB', options);

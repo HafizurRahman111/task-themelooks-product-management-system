@@ -217,10 +217,9 @@ export default {
 </script>
 
 <style scoped>
-/* Importing the external CSS file */
 @import "@/assets/css/product-form.css";
 
-/* Optional: Style the image preview */
+
 .image-preview {
     max-width: 150px;
     margin-top: 10px;

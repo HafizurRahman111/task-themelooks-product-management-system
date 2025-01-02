@@ -1,15 +1,24 @@
 <template>
   <div id="app">
-    <router-view></router-view>
+    <main class="main-content">
+      <router-view />
+    </main>
   </div>
 </template>
 
 <script>
+
 export default {
-  name: 'App'
+  components: {
+
+  },
 };
 </script>
 
-<style scoped>
-/* Add your styles here */
+<style>
+body {
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+  background-color: #ecf0f1;
+}
 </style>

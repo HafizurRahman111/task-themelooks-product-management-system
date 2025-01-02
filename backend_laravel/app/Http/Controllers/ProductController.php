@@ -14,22 +14,25 @@ class ProductController extends Controller
     public function index()
     {
         try {
-            $products = ProductDetail::with('variations')
-                ->paginate(8);
+            $products = ProductDetail::with('variations')->get();
 
             $products->map(function ($product) {
+                // Calculate discounted price
+                $discounted_price = $product->selling_price - ($product->selling_price * $product->discount / 100);
+
+                // Calculate tax
+                $tax_amount = ($discounted_price * $product->tax) / 100;
+
+                $product->discounted_price = $discounted_price;
+                $product->tax_amount = $tax_amount;
+
                 $product->image = asset('assets/images/' . $product->image);
                 return $product;
             });
 
             return response()->json([
                 'status' => 'success',
-                'data' => $products->items(),
-                'pagination' => [
-                    'current_page' => $products->currentPage(),
-                    'last_page' => $products->lastPage(),
-                    'total' => $products->total(),
-                ],
+                'data' => $products,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -62,10 +65,8 @@ class ProductController extends Controller
      */
     public function show($id)
     {
-        // Retrieve the product with its variations
         $product = ProductDetail::with('variations')->find($id);
 
-        // Check if the product exists
         if (!$product) {
             return response()->json([
                 'success' => false,
@@ -73,20 +74,16 @@ class ProductController extends Controller
             ], 404);
         }
 
-        // Apply image URL mapping for the product image
         $product->image = asset('assets/images/' . $product->image);
 
-        // Set default prices for the main product
         $this->setDefaultPrices($product);
 
-        // Apply default prices for variations if they exist
         if ($product->variations && $product->variations->count() > 0) {
             $product->variations->each(function ($variation) {
                 $this->setDefaultPrices($variation);
             });
         }
 
-        // Return the product details in the response
         return response()->json([
             'success' => true,
             'product' => $product,
@@ -95,14 +92,11 @@ class ProductController extends Controller
 
     private function setDefaultPrices($product)
     {
-        // Set default values for price-related attributes if not set
         $product->selling_price = $product->selling_price ?? 'N/A';
         $product->purchase_price = $product->purchase_price ?? 'N/A';
         $product->discount = $product->discount ?? 'N/A';
         $product->tax = $product->tax ?? 'N/A';
     }
-
-
 
 
     /**
@@ -124,9 +118,31 @@ class ProductController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy($id)
     {
-        //
+        try {
+            $product = ProductDetail::findOrFail($id);
+
+            $product->delete();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Product deleted successfully.',
+            ], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Product not found.',
+            ], 404);
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while deleting the product.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
 
@@ -138,13 +154,20 @@ class ProductController extends Controller
 
         $search = $request->input('search', '');
 
-        $products = ProductDetail::select('id', 'name', 'sku')
+        $products = ProductDetail::select('id', 'name', 'sku', 'image')
             ->when($search, function ($query) use ($search) {
-                return $query->where('name', 'like', '%' . $search . '%');
+                return $query->where('name', '=', $search)
+                    ->orWhere('sku', '=', $search);
             })
-            ->get();
+            ->get()
+            ->map(function ($product) {
+                $product->image = asset('assets/images/' . $product->image);
+                return $product;
+            });
 
-        return response()->json($products);
+        return response()->json([
+            'products' => $products,
+        ]);
     }
 
 

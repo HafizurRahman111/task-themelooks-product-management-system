@@ -1,11 +1,11 @@
 <template>
-  <DashboardLayout>
+  <Dashboard>
     <div class="product-list-container">
       <h2>Product List</h2>
 
       <!-- Product Cards Grid -->
       <div class="product-cards">
-        <div v-if="products.length" class="product-card" v-for="product in products" :key="product.id">
+        <div v-if="products.length" class="product-card" v-for="product in paginatedProducts" :key="product.id">
           <div class="product-card-content">
             <img :src="product.image" alt="Product Image" class="product-image" />
             <div class="product-info">
@@ -21,7 +21,6 @@
             </div>
           </div>
           <div class="product-actions">
-            <!-- Action Buttons (Edit, View, Delete) -->
             <button @click="viewProduct(product.id)" class="action-button view-button">View</button>
             <button @click="editProduct(product.id)" class="action-button">Edit</button>
             <button @click="deleteProduct(product.id)" class="action-button delete-button">Delete</button>
@@ -30,45 +29,55 @@
       </div>
 
       <!-- Pagination Controls -->
-      <div v-if="pagination.total > 0" class="pagination-controls">
-        <button @click="changePage(pagination.current_page - 1)" :disabled="pagination.current_page === 1"
-          class="pagination-button">‹</button>
-        <span>Page {{ pagination.current_page }} of {{ pagination.last_page }}</span>
-        <button @click="changePage(pagination.current_page + 1)"
-          :disabled="pagination.current_page === pagination.last_page" class="pagination-button">›</button>
+      <div class="pagination-controls">
+        <button v-if="pagination.current_page > 1" @click="changePage(pagination.current_page - 1)"
+          class="pagination-button">
+          Previous
+        </button>
+        <span>{{ pagination.current_page }} / {{ pagination.last_page }}</span>
+        <button v-if="pagination.current_page < pagination.last_page" @click="changePage(pagination.current_page + 1)"
+          class="pagination-button">
+          Next
+        </button>
       </div>
-
-      <!-- Error message if no products found -->
-      <p v-else>No products found.</p>
     </div>
-  </DashboardLayout>
+  </Dashboard>
 </template>
 
 <script>
 export default {
   data() {
     return {
-      products: [],  // Array to hold products fetched from the API
+      products: [],
       pagination: {
         current_page: 1,
         last_page: 1,
-        total: 0,
+        products_per_page: 4,
       },
       errorMessage: null,
     };
   },
   mounted() {
-    this.fetchProducts(); // Fetch products data when the component is mounted
+    this.fetchProducts();
+  },
+  computed: {
+
+    paginatedProducts() {
+      const start = (this.pagination.current_page - 1) * this.pagination.products_per_page;
+      const end = start + this.pagination.products_per_page;
+      return this.products.slice(start, end);
+    },
   },
   methods: {
     async fetchProducts() {
       try {
-        const response = await fetch(`http://127.0.0.1:8000/api/products?page=${this.pagination.current_page}`);
+        const response = await fetch(`http://127.0.0.1:8000/api/products`);
+
         if (response.ok) {
           const data = await response.json();
           if (data.status === 'success') {
             this.products = data.data;
-            this.pagination = data.pagination;
+            this.pagination.last_page = Math.ceil(this.products.length / this.pagination.products_per_page);
           } else {
             this.errorMessage = 'Failed to fetch products.';
           }
@@ -80,10 +89,11 @@ export default {
       }
     },
 
+    // Change page based on the selected page number
     changePage(page) {
-      if (page < 1 || page > this.pagination.last_page) return;
-      this.pagination.current_page = page;
-      this.fetchProducts();
+      if (page >= 1 && page <= this.pagination.last_page) {
+        this.pagination.current_page = page;
+      }
     },
 
     viewProduct(id) {
@@ -92,12 +102,40 @@ export default {
     },
 
     editProduct(id) {
-      // Logic for editing product
+
     },
 
     deleteProduct(id) {
-      // Logic for deleting product
-    },
+
+      const product = this.products.find(product => product.id === id);
+
+      if (product && confirm(`Are you sure you want to delete the product ${product.name} (ID: ${product.id}, SKU: ${product.sku})?`)) {
+
+        fetch(`http://127.0.0.1:8000/api/products/delete/${id}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.$store.state.authToken}`,
+          },
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.status === 'success') {
+
+              this.products = this.products.filter(product => product.id !== id);
+              this.$router.push('/products');
+              alert(`Product ${product.name} (ID: ${product.id}, SKU: ${product.sku}) deleted successfully.`);
+            } else {
+              alert("Failed to delete the product.");
+            }
+          })
+          .catch(error => {
+            console.error('Error deleting product:', error);
+            alert("An error occurred while deleting the product.");
+          });
+      }
+    }
+
   }
 };
 </script>

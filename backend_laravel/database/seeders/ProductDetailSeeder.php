@@ -19,7 +19,7 @@ class ProductDetailSeeder extends Seeder
                 'sku' => 'TSH123',
                 'unit' => 'piece',
                 'unit_value' => 5,
-                // 'selling_price' => 150,
+                'selling_price' => 150,
                 // 'purchase_price' => 100,
                 'discount' => 10, // 10% discount
                 'tax' => 5, // 5% tax
@@ -33,7 +33,7 @@ class ProductDetailSeeder extends Seeder
                 'sku' => 'SHO456',
                 'unit' => 'pair',
                 'unit_value' => 3,
-                // 'selling_price' => 2000,
+                'selling_price' => 2000,
                 // 'purchase_price' => 1800,
                 'discount' => 5, // 5% discount
                 'tax' => 8, // 8% tax
@@ -46,7 +46,7 @@ class ProductDetailSeeder extends Seeder
                 'sku' => 'SUG789',
                 'unit' => 'kg',
                 'unit_value' => 25,
-                // 'selling_price' => 150,
+                'selling_price' => 150,
                 // 'purchase_price' => 135,
                 'discount' => 2, // 2% discount
                 'tax' => 3, // 3% tax

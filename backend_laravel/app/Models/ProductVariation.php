@@ -16,12 +16,13 @@ class ProductVariation extends Model
         'selling_price'
     ];
 
+    protected $casts = [
+        'variation_attributes' => 'array',
+    ];
+
     public function product()
     {
         return $this->belongsTo(ProductDetail::class, 'product_id');
     }
 
-    protected $casts = [
-        'variation_attributes' => 'array',
-    ];
 }
